@@ -7,7 +7,8 @@ from .models import Board, Tag, Feedback, Comment
 class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'is_public', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
