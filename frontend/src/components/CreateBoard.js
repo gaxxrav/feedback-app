@@ -103,7 +103,7 @@ const CreateBoard = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
 
@@ -117,7 +117,7 @@ const CreateBoard = () => {
             value={formData.description}
             onChange={handleChange}
             rows="3"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
 
@@ -128,7 +128,7 @@ const CreateBoard = () => {
             name="is_public"
             checked={formData.is_public}
             onChange={handleChange}
-            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
           />
           <label htmlFor="is_public" className="ml-2 block text-sm text-gray-900">
             Make this board public (accessible by anyone)
@@ -148,7 +148,7 @@ const CreateBoard = () => {
                       type="checkbox"
                       checked={formData.allowed_users.includes(user.id)}
                       onChange={() => handleUserSelection(user.id)}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">
                       {user.first_name} {user.last_name} ({user.username})
@@ -169,7 +169,7 @@ const CreateBoard = () => {
                       type="checkbox"
                       checked={formData.allowed_roles.includes(role.id)}
                       onChange={() => handleRoleSelection(role.id)}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">
                       {role.name}
@@ -185,7 +185,7 @@ const CreateBoard = () => {
           <button
             type="submit"
             disabled={loading}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+            className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Board'}
           </button>
