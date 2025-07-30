@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
+import LandingPage from './pages/LandingPage';
 import BoardList from './BoardList';
 import CreateBoard from './components/CreateBoard';
 import BoardDetail from './components/BoardDetail';
@@ -16,9 +17,10 @@ function App() {
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Header />
-          <main className="py-8">
+          <main>
             <Routes>
-              <Route path="/" element={<BoardList />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/boards" element={<BoardList />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/create-board" element={<CreateBoard />} />

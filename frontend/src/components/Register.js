@@ -28,7 +28,7 @@ const Register = () => {
 
     const result = await register(formData);
     if (result.success) {
-      navigate('/');
+      navigate('/boards');
     }
     setLoading(false);
   };

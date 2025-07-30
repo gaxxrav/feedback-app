@@ -1,12 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (
@@ -20,12 +22,14 @@ const Header = () => {
           </div>
           
           <nav className="flex items-center space-x-8">
-            <Link
-              to="/"
-              className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Boards
-            </Link>
+            {user && (
+              <Link
+                to="/boards"
+                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Boards
+              </Link>
+            )}
             
             {user ? (
               <>
