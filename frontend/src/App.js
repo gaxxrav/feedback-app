@@ -8,6 +8,10 @@ import BoardList from './BoardList';
 import CreateBoard from './components/CreateBoard';
 import BoardDetail from './components/BoardDetail';
 import EditBoard from './components/EditBoard';
+import FeedbackList from './components/FeedbackList';
+import CreateFeedback from './components/CreateFeedback';
+import FeedbackDetail from './components/FeedbackDetail';
+import EditFeedback from './components/EditFeedback';
 import Login from './components/Login';
 import Register from './components/Register';
 
@@ -26,6 +30,14 @@ function App() {
               <Route path="/create-board" element={<CreateBoard />} />
               <Route path="/board/:id" element={<BoardDetail />} />
               <Route path="/board/:id/edit" element={<EditBoard />} />
+              
+              {/* Feedback Routes */}
+              <Route path="/feedback" element={<FeedbackList />} />
+              <Route path="/feedback/create" element={<CreateFeedback />} />
+              <Route path="/feedback/:id" element={<FeedbackDetail />} />
+              <Route path="/feedback/:id/edit" element={<EditFeedback />} />
+              <Route path="/board/:boardId/feedback" element={<FeedbackList />} />
+              <Route path="/board/:boardId/feedback/create" element={<CreateFeedback />} />
             </Routes>
           </main>
         </div>
