@@ -142,9 +142,24 @@ const BoardDetail = () => {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Feedback Items</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Feedback Items</h2>
+          <Link
+            to={`/board/${id}/feedback/create`}
+            className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            Create Feedback
+          </Link>
+        </div>
+        
         <div className="text-center py-8 text-gray-500">
-          No feedback items yet. This feature will be implemented in the next phase.
+          <p className="mb-4">View and manage feedback for this board</p>
+          <Link
+            to={`/board/${id}/feedback`}
+            className="text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            View Board Feedback →
+          </Link>
         </div>
       </div>
     </div>

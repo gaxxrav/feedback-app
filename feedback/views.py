@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import models
+from django_filters import rest_framework as filters
 
 #import models and serializers
 from .models import Board, Tag, Feedback, Comment
 from .serializers import BoardSerializer, TagSerializer, FeedbackSerializer, CommentSerializer
-from .permissions import IsBoardMemberOrPublic, IsBoardCreator
+from .permissions import IsBoardMemberOrPublic, IsBoardCreator, IsBoardEditorOrCreator, IsFeedbackCreatorOrModerator, IsFeedbackBoardMember
 
 from core.permissions import IsAdminUser, IsModeratorUser, IsBoardMember, IsFeedbackCreator
 
@@ -50,7 +51,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         if self.action in ['create']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsBoardCreator]
+            permission_classes = [IsBoardEditorOrCreator]
         else:
             permission_classes = [IsBoardMemberOrPublic]
         return [permission() for permission in permission_classes]
@@ -65,9 +66,11 @@ class BoardViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_authenticated:
             raise permissions.PermissionDenied("You must be logged in to edit boards")
         
-        # Only the creator can edit the board
-        if board.created_by != self.request.user:
-            raise permissions.PermissionDenied("Only the board creator can edit this board")
+        # Check if user has permission to edit the board
+        if not (board.created_by == self.request.user or 
+                self.request.user in board.allowed_users.all() or
+                board.allowed_roles.filter(user=self.request.user).exists()):
+            raise permissions.PermissionDenied("You don't have permission to edit this board")
         
         serializer.save()
 
@@ -75,9 +78,11 @@ class BoardViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_authenticated:
             raise permissions.PermissionDenied("You must be logged in to delete boards")
         
-        # Only the creator can delete the board
-        if instance.created_by != self.request.user:
-            raise permissions.PermissionDenied("Only the board creator can delete this board")
+        # Check if user has permission to delete the board
+        if not (instance.created_by == self.request.user or 
+                self.request.user in instance.allowed_users.all() or
+                instance.allowed_roles.filter(user=self.request.user).exists()):
+            raise permissions.PermissionDenied("You don't have permission to delete this board")
         
         instance.delete()
 
@@ -119,25 +124,84 @@ class TagViewSet(viewsets.ModelViewSet):
             raise permissions.PermissionDenied("Only admins and moderators can create tags")
         serializer.save()
 
+class FeedbackFilter(filters.FilterSet):
+    status = filters.ChoiceFilter(choices=Feedback.STATUS_CHOICES)
+    board = filters.NumberFilter()
+    created_by = filters.NumberFilter()
+    tags = filters.NumberFilter(field_name='tags', lookup_expr='id')
+    
+    class Meta:
+        model = Feedback
+        fields = ['status', 'board', 'created_by', 'tags']
+
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
-
+    filterset_class = FeedbackFilter
+    
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin():
-            return Feedback.objects.all()
-        elif user.is_moderator():
-            return Feedback.objects.all()
+        
+        # Get base queryset
+        queryset = Feedback.objects.select_related('board', 'created_by').prefetch_related('tags', 'upvotes')
+        
+        if user.is_admin() or user.is_moderator():
+            return queryset
         else:
-            # Contributors can only see feedback from boards they're members of
-            return Feedback.objects.filter(
-                board__members=user
+            # Regular users can only see feedback from boards they have access to
+            return queryset.filter(
+                models.Q(board__is_public=True) |
+                models.Q(board__created_by=user) |
+                models.Q(board__allowed_users=user) |
+                models.Q(board__allowed_roles__user=user)
             ).distinct()
+    
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ['create']:
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            permission_classes = [IsFeedbackCreatorOrModerator]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
+        # Validate that user has access to the board
+        board = serializer.validated_data.get('board')
+        user = self.request.user
+        
+        # Check if user has access to the board
+        if not (board.is_public or 
+                board.created_by == user or 
+                user in board.allowed_users.all() or
+                board.allowed_roles.filter(user=user).exists()):
+            raise permissions.PermissionDenied("You don't have permission to create feedback on this board")
+        
         serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        feedback = self.get_object()
+        
+        # Check if user has permission to edit the feedback
+        if not (feedback.created_by == self.request.user or 
+                self.request.user.is_admin() or 
+                self.request.user.is_moderator()):
+            raise permissions.PermissionDenied("You don't have permission to edit this feedback")
+        
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Check if user has permission to delete the feedback
+        if not (instance.created_by == self.request.user or 
+                self.request.user.is_admin() or 
+                self.request.user.is_moderator()):
+            raise permissions.PermissionDenied("You don't have permission to delete this feedback")
+        
+        instance.delete()
 
     @action(detail=True, methods=['post'])
     def upvote(self, request, pk=None):
@@ -156,9 +220,9 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         feedback = self.get_object()
         new_status = request.data.get('status')
         
-        if not (request.user.is_admin() or request.user.is_moderator()):
+        if not (request.user.is_admin() or request.user.is_moderator() or feedback.created_by == request.user):
             return Response(
-                {'error': 'Only admins and moderators can change feedback status'}, 
+                {'error': 'Only admins, moderators, or the feedback creator can change status'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -172,6 +236,25 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=['get'])
+    def by_board(self, request):
+        """Get feedback filtered by board"""
+        board_id = request.query_params.get('board_id')
+        if board_id:
+            queryset = self.get_queryset().filter(board_id=board_id)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        return Response({'error': 'board_id parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def most_upvoted(self, request):
+        """Get feedback sorted by most upvoted"""
+        queryset = self.get_queryset().annotate(
+            upvotes_count=models.Count('upvotes')
+        ).order_by('-upvotes_count')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -179,14 +262,15 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin():
-            return Comment.objects.all()
-        elif user.is_moderator():
+        if user.is_admin() or user.is_moderator():
             return Comment.objects.all()
         else:
-            # Contributors can only see comments from boards they're members of
+            # Regular users can only see comments from boards they have access to
             return Comment.objects.filter(
-                feedback__board__members=user
+                models.Q(feedback__board__is_public=True) |
+                models.Q(feedback__board__created_by=user) |
+                models.Q(feedback__board__allowed_users=user) |
+                models.Q(feedback__board__allowed_roles__user=user)
             ).distinct()
 
     def perform_create(self, serializer):
