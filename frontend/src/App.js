@@ -6,6 +6,7 @@ import Header from './components/Header';
 import BoardList from './BoardList';
 import CreateBoard from './components/CreateBoard';
 import BoardDetail from './components/BoardDetail';
+import EditBoard from './components/EditBoard';
 import Login from './components/Login';
 import Register from './components/Register';
 
@@ -22,6 +23,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/create-board" element={<CreateBoard />} />
               <Route path="/board/:id" element={<BoardDetail />} />
+              <Route path="/board/:id/edit" element={<EditBoard />} />
             </Routes>
           </main>
         </div>
