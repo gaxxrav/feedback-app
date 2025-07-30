@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 const BoardDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchBoard = async () => {
@@ -25,11 +27,30 @@ const BoardDetail = () => {
     fetchBoard();
   }, [id]);
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this board? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await api.delete(`/boards/${id}/`);
+      navigate('/boards');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete board');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) return <div className="text-center py-8">Loading board...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!board) return <div className="text-center py-8">Board not found</div>;
 
   const isCreator = user && board.created_by === user.id;
+  const hasEditPermission = isCreator || 
+    (board.allowed_users && board.allowed_users.some(u => u.id === user?.id)) ||
+    (board.allowed_roles && board.allowed_roles.some(r => user?.groups?.includes(r.id)));
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -52,13 +73,22 @@ const BoardDetail = () => {
               }`}>
                 {board.is_public ? 'Public' : 'Private'}
               </span>
-              {isCreator && (
-                <Link
-                  to={`/board/${id}/edit`}
-                  className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Edit Board
-                </Link>
+              {hasEditPermission && (
+                <>
+                  <Link
+                    to={`/board/${id}/edit`}
+                    className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Edit Board
+                  </Link>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting...' : 'Delete Board'}
+                  </button>
+                </>
               )}
             </div>
           </div>
