@@ -260,7 +260,7 @@ const FeedbackDetail = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } disabled:opacity-50`}
             >
-              <span>👍</span>
+              <span></span>
               <span>{feedback.upvotes_count} upvotes</span>
             </button>
             {feedback.is_upvoted && (
