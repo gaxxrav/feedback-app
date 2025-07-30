@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 User = get_user_model()
 
@@ -11,8 +12,10 @@ User = get_user_model()
 class Board(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    is_public = models.BooleanField(default=True)
-    members = models.ManyToManyField(User, related_name='boards')
+    is_public = models.BooleanField(default=False)  # Changed default to False for better security
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_boards')
+    allowed_users = models.ManyToManyField(User, related_name='boards_allowed', blank=True)
+    allowed_roles = models.ManyToManyField(Group, related_name='boards_allowed_roles', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -34,7 +37,7 @@ class Tag(models.Model):
 	    > Can have many tags
 	    > Can be upvoted by many users
 	    > has a status (open, in progress, completed)
-	Tracks who created it'''
+	    > Tracks who created it'''
 
 class Feedback(models.Model):
     STATUS_CHOICES = [
