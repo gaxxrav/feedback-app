@@ -18,7 +18,7 @@ const Login = () => {
 
     const result = await login(formData);
     if (result.success) {
-      navigate('/');
+      navigate('/boards');
     }
     setLoading(false);
   };
