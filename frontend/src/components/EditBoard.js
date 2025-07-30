@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
-const CreateBoard = () => {
+const EditBoard = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [board, setBoard] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -10,44 +13,54 @@ const CreateBoard = () => {
     allowed_users: [],
     allowed_roles: []
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [availableRoles, setAvailableRoles] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersResponse, rolesResponse] = await Promise.all([
+        const [boardResponse, usersResponse, rolesResponse] = await Promise.all([
+          api.get(`/boards/${id}/`),
           api.get('/boards/available_users/'),
           api.get('/boards/available_roles/')
         ]);
+        
+        const boardData = boardResponse.data;
+        setBoard(boardData);
+        setFormData({
+          name: boardData.name,
+          description: boardData.description || '',
+          is_public: boardData.is_public,
+          allowed_users: boardData.allowed_users?.map(user => user.id) || [],
+          allowed_roles: boardData.allowed_roles?.map(role => role.id) || []
+        });
         setAvailableUsers(usersResponse.data);
         setAvailableRoles(rolesResponse.data);
+        setLoading(false);
       } catch (err) {
-        setError('Failed to load users and roles');
-      } finally {
-        setLoadingData(false);
+        setError(err.response?.data?.message || 'Failed to fetch board');
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError(null);
 
     try {
-      await api.post('/boards/', formData);
-      navigate('/');
+      await api.put(`/boards/${id}/`, formData);
+      navigate(`/board/${id}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create board');
+      setError(err.response?.data?.message || 'Failed to update board');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -77,13 +90,22 @@ const CreateBoard = () => {
     }));
   };
 
-  if (loadingData) {
-    return <div className="text-center py-8">Loading...</div>;
-  }
+  if (loading) return <div className="text-center py-8">Loading board...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (!board) return <div className="text-center py-8">Board not found</div>;
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Create New Board</h1>
+      <div className="mb-6">
+        <Link
+          to={`/board/${id}`}
+          className="text-indigo-600 hover:text-indigo-800 mb-4 inline-block"
+        >
+          ← Back to Board
+        </Link>
+        
+        <h1 className="text-2xl font-bold mb-6">Edit Board</h1>
+      </div>
       
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -116,7 +138,7 @@ const CreateBoard = () => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            rows="3"
+            rows="4"
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
@@ -184,22 +206,21 @@ const CreateBoard = () => {
         <div className="flex space-x-4">
           <button
             type="submit"
-            disabled={loading}
+            disabled={saving}
             className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create Board'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
+          <Link
+            to={`/board/${id}`}
             className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
           >
             Cancel
-          </button>
+          </Link>
         </div>
       </form>
     </div>
   );
 };
 
-export default CreateBoard; 
+export default EditBoard; 
