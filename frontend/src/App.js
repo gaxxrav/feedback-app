@@ -12,6 +12,7 @@ import FeedbackList from './components/FeedbackList';
 import CreateFeedback from './components/CreateFeedback';
 import FeedbackDetail from './components/FeedbackDetail';
 import EditFeedback from './components/EditFeedback';
+import KanbanBoard from './components/KanbanBoard';
 import Login from './components/Login';
 import Register from './components/Register';
 
@@ -38,6 +39,9 @@ function App() {
               <Route path="/feedback/:id/edit" element={<EditFeedback />} />
               <Route path="/board/:boardId/feedback" element={<FeedbackList />} />
               <Route path="/board/:boardId/feedback/create" element={<CreateFeedback />} />
+              
+              {/* Kanban Board Route */}
+              <Route path="/kanban" element={<KanbanBoard />} />
             </Routes>
           </main>
         </div>
