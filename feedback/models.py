@@ -43,6 +43,7 @@ class Feedback(models.Model):
     STATUS_CHOICES = [
         ('open', 'Open'),
         ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
         ('completed', 'Completed'),
     ]
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='feedbacks')

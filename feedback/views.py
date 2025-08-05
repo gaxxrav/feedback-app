@@ -255,6 +255,31 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def kanban(self, request):
+        """Get feedback grouped by status for Kanban board"""
+        try:
+            queryset = self.get_queryset()
+            
+            # Group feedback by status
+            kanban_data = {}
+            for status_choice in Feedback.STATUS_CHOICES:
+                status_key = status_choice[0]
+                status_label = status_choice[1]
+                
+                status_feedbacks = queryset.filter(status=status_key).order_by('-created_at')
+                serializer = self.get_serializer(status_feedbacks, many=True)
+                
+                kanban_data[status_key] = {
+                    'label': status_label,
+                    'feedbacks': serializer.data
+                }
+            
+            return Response(kanban_data)
+        except Exception as e:
+            print(f"Error in kanban endpoint: {e}")
+            return Response({'error': str(e)}, status=500)
+
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

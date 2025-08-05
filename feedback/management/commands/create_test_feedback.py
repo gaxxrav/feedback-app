@@ -82,7 +82,7 @@ class Command(BaseCommand):
             {
                 'title': 'Improve search functionality',
                 'description': 'The current search could be more intuitive and faster. Consider adding filters and autocomplete.',
-                'status': 'open',
+                'status': 'resolved',
                 'board': board1,
                 'created_by': regular_user,
                 'tags': [tags['Enhancement'], tags['UI/UX']]
@@ -102,6 +102,14 @@ class Command(BaseCommand):
                 'board': board2,
                 'created_by': regular_user,
                 'tags': [tags['Bug']]
+            },
+            {
+                'title': 'Update user profile page',
+                'description': 'The user profile page needs a modern redesign with better layout and functionality.',
+                'status': 'resolved',
+                'board': board1,
+                'created_by': admin_user,
+                'tags': [tags['UI/UX'], tags['Enhancement']]
             }
         ]
 
